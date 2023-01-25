@@ -1,0 +1,11 @@
+{
+    "http": {
+        "port": "8080",
+        "read": 30,
+        "write": 30
+    },
+    "auth_service": {
+        "host": "localhost",
+        "port": "50501"
+    }
+}
