@@ -22,3 +22,7 @@ type UserSignIn struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type userCtx string
+
+var CurrentUser userCtx = "currentUser"

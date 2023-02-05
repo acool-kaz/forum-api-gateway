@@ -6,12 +6,14 @@ import (
 
 	"github.com/acool-kaz/forum-api-gateway/internal/config"
 	auth_svc "github.com/acool-kaz/forum-api-gateway/internal/delivery/http/auth"
+	post_svc "github.com/acool-kaz/forum-api-gateway/internal/delivery/http/post"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Handler struct {
 	authService *auth_svc.AuthService
+	postService *post_svc.PostService
 }
 
 func InitHandler(cfg *config.Config) (*Handler, error) {
@@ -22,8 +24,14 @@ func InitHandler(cfg *config.Config) (*Handler, error) {
 		return nil, err
 	}
 
+	postService, err := post_svc.InitPostService(cfg, authService)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Handler{
 		authService: authService,
+		postService: postService,
 	}, nil
 }
 
@@ -36,6 +44,7 @@ func (h *Handler) InitRoutes() http.Handler {
 	router.Use(middleware.Recoverer)
 
 	h.authService.RegisterAuthServiceRoutes(router)
+	h.postService.RegisterPostServiceRoutes(router)
 
 	return router
 }

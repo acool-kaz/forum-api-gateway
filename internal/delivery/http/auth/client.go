@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/acool-kaz/forum-api-gateway/internal/config"
 	"github.com/acool-kaz/forum-api-gateway/internal/models"
@@ -36,6 +39,33 @@ func (a *AuthService) RegisterAuthServiceRoutes(router *chi.Mux) {
 	router.Route("/auth", func(auth chi.Router) {
 		auth.Post("/sign-up", a.signUpHandler)
 		auth.Post("/sign-in", a.signInHandler)
+	})
+}
+
+func (a *AuthService) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		header, ok := r.Header["Authorization"]
+		if !ok {
+			json.SendError(w, errors.New("empty auth header"))
+			return
+		}
+
+		headerParts := strings.Split(header[0], " ")
+		if len(headerParts) != 2 {
+			json.SendError(w, errors.New("invalid auth header"))
+			return
+		}
+
+		resp, err := a.Client.Validate(r.Context(), &auth_svc_pb.ValidateRequest{
+			AccessToken: headerParts[1],
+		})
+		if err != nil {
+			json.SendError(w, err)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), models.CurrentUser, uint(resp.GetUserId()))
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
